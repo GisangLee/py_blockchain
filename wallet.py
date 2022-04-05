@@ -104,11 +104,26 @@ class Transaction(object):
 
 
 if __name__ == "__main__":
-    wallet = Wallet()
-    print(wallet.private_key)
-    print(wallet.public_key)
-    print(wallet._blockchain_address)
+    wallet_M = Wallet()
+    wallet_A = Wallet()
+    wallet_B = Wallet()
 
-    t = Transaction(wallet.private_key, wallet.public_key, wallet.blockchain_address, "Bob", 2.4)
+    t = Transaction(wallet_A.private_key, wallet_A.public_key, wallet_A.blockchain_address, wallet_B.blockchain_address, 1.0)
 
-    print(t.generate_signature())
+    ####### Blockchain Node ###########
+    import block_chain
+    blockChain = block_chain.BlockChain(blockchain_address=wallet_A.blockchain_address)
+
+    is_added = blockChain.add_transaction(
+        wallet_A.blockchain_address,
+        wallet_B.blockchain_address,
+        1.0,
+        wallet_A.public_key,
+        t.generate_signature(),
+    )
+
+    print("Added ? ", is_added)
+    blockChain.mining()
+    utils.pprint(blockChain.chain)
+    print("A", blockChain.calc_total_amount(wallet_A.blockchain_address))
+    print("B", blockChain.calc_total_amount(wallet_B.blockchain_address))

@@ -1,9 +1,10 @@
 import logging, sys, time, json, hashlib
 import utils
+from ecdsa import NIST256p, VerifyingKey
 
 MINING_DFFICULTY = 3
 MINING_SENDER = "Dude"
-MINING_REWARD = 100.0
+MINING_REWARD = 1.0
 
 logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 logger = logging.getLogger(__name__)
@@ -39,7 +40,7 @@ class BlockChain(object):
 
         return hashlib.sha256(sorted_block_json.encode()).hexdigest()
 
-    def add_transaction(self, sender_blockchain_address, recipient_blockchain_address, value):
+    def add_transaction(self, sender_blockchain_address, recipient_blockchain_address, value, sender_public_key=None, signature=None):
 
         transaction = utils.sorted_dict_by_key({
             "sender_blockchain_address": sender_blockchain_address,
@@ -47,8 +48,37 @@ class BlockChain(object):
             "value": float(value)
         })
 
-        self.transaction_pool.append(transaction)
-        return True
+        if sender_blockchain_address == MINING_SENDER:
+            self.transaction_pool.append(transaction)
+            return True
+        
+        if self.verify_transaction_signature(sender_public_key, signature, transaction):
+            self.transaction_pool.append(transaction)
+
+            # if self.calc_total_amount(sender_blockchain_address) < float(value):
+            #     logger.error({
+            #         "action": "add_transaction_error",
+            #         "error": "no value"
+            #     })
+            #     return False
+
+            return True
+
+        return False
+
+    def verify_transaction_signature(self, sender_public_key, signature, transaction):
+        sha256 = hashlib.sha256()
+        sha256.update(str(transaction).encode("utf-8"))
+        message = sha256.digest()
+        signature_bytes = bytes().fromhex(signature)
+        verifying_key = VerifyingKey.from_string(
+            bytes().fromhex(sender_public_key),
+            curve=NIST256p
+        )
+
+        verified_key = verifying_key.verify(signature_bytes, message)
+
+        return verified_key
 
     def valid_proot(self, transactions, previous_hash, nonce, difficulty=MINING_DFFICULTY):
         guess_block = utils.sorted_dict_by_key({
@@ -105,22 +135,3 @@ class BlockChain(object):
                 if blockchain_address == transaction["sender_blockchain_address"]:
                     total_amount -= value
         return total_amount
-
-
-if __name__ == "__main__":
-    my_blockchain_address = "123dsad48yq8e9sadsajd1lej28ye"
-    block_chain = BlockChain(blockchain_address=my_blockchain_address)
-    utils.pprint(block_chain.chain)
-
-    block_chain.add_transaction("Dude", "Alice", 2.0)
-    block_chain.mining()
-    utils.pprint(block_chain.chain)
-
-    block_chain.add_transaction("Bob", "Carl", 3.4)
-    block_chain.add_transaction("X", "Y", 1.4)
-    block_chain.mining()
-    utils.pprint(block_chain.chain)
-
-    print("my", block_chain.calc_total_amount(my_blockchain_address))
-    print("Bob", block_chain.calc_total_amount("Bob"))
-    print("Y", block_chain.calc_total_amount("Y"))
