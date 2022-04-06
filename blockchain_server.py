@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 import block_chain, wallet
 
 app = Flask(__name__)
@@ -31,6 +31,45 @@ def get_chain():
         "chain": blockChain.chain
     }
     return jsonify(res), 200
+
+
+
+@app.route("/transactions", methods=["GET", "POST"])
+def transaction():
+    block_chain = get_blockchain()
+    if request.method == "GET":
+        transactions = block_chain.transaction_pool
+        response = {
+            "transactions": transactions,
+            "length": len(transactions)
+        }
+        return jsonify(response), 200
+
+    if request.method == "POST":
+        request_json = request.json
+        required = (
+            "sender_blockchain_address",
+            "recipient_blockchain_address",
+            "sender_public_key",
+            "value",
+            "signature",
+        )
+        if not all(k in request_json for k in required):
+            return jsonify({"message": "missing values"}), 400
+
+        is_created = block_chain.create_transaction(
+            request_json["sender_blockchain_address"],
+            request_json["recipient_blockchain_address"],
+            request_json["sender_public_key"],
+            request_json["value"],
+            request_json["signature"]
+        )
+
+        if not is_created:
+            return jsonify({"message": "fail"}), 400
+
+        return jsonify({"message": "success"}), 201
+
 
 if __name__ == "__main__":
     from argparse import ArgumentParser
