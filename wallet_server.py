@@ -70,16 +70,6 @@ def create_transaction():
     return jsonify({"message": "fail", "response": response.text}), 400
 
 
-
-
-
-
-
-
-
-
-
-
 if __name__ == "__main__":
     from argparse import ArgumentParser
     parser = ArgumentParser()
