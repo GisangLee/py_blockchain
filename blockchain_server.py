@@ -71,6 +71,17 @@ def transaction():
         return jsonify({"message": "success"}), 201
 
 
+@app.route("/mine", methods=["GET"])
+def mine():
+    block_chain = get_blockchain()
+    is_mined = block_chain.mining()
+
+    if is_mined:
+        return jsonify({"message": "success"}), 200
+
+    return jsonify({"messaeg": "fail"}), 400
+
+
 if __name__ == "__main__":
     from argparse import ArgumentParser
     parser = ArgumentParser()
