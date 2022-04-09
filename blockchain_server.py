@@ -33,7 +33,7 @@ def get_chain():
     return jsonify(res), 200
 
 
-@app.route("/transactions", methods=["GET", "POST" "PUT", "DELETE"])
+@app.route("/transactions", methods=["GET", "POST", "PUT", "DELETE"])
 def transaction():
     block_chain = get_blockchain()
     if request.method == "GET":

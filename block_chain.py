@@ -214,3 +214,24 @@ class BlockChain(object):
                 if blockchain_address == transaction["sender_blockchain_address"]:
                     total_amount -= value
         return total_amount
+
+    def valid_chain(self, chain):
+        prev_block = chain[0]
+
+        current_idx = 1
+        while current_idx < len(chain):
+            block = chain[current_idx]
+
+            if block["previous_hash"] != self.hash(prev_block):
+                return False
+
+            if not self.valid_proot(
+                block["transaction"], block["previous_hash"],
+                block["nonce"], MINING_DFFICULTY
+            ):
+                return False
+
+            prev_block = block
+            current_idx += 1
+            
+        return True
