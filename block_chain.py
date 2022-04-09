@@ -7,11 +7,12 @@ MINING_SENDER = "Dude"
 MINING_REWARD = 1.0
 MINING_TIMER_SEC = 20
 
+BLOCKCHAIN_PORT_RANGE = (5000, 5003)
+NEIGHBORS_IP_RANGE_NUM = (0, 1)
+BLOCKCHAIN_NEIGHBORS_SYNC_TIME_SEC = 20
+
 logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 logger = logging.getLogger(__name__)
-
-logging.info("test")
-print("test2")
 
 
 class BlockChain(object):
@@ -23,6 +24,35 @@ class BlockChain(object):
         self.blockchain_address = blockchain_address
         self.port = port
         self.mining_semaphore = threading.Semaphore(1)
+        self.neighbors = []
+        self.sync_neighbors_semaphore = threading.Semaphore(1)
+
+    def set_neighbors(self):
+
+        self.neighbors = utils.find_neighbors(
+            utils.get_host(),
+            self.port,
+            NEIGHBORS_IP_RANGE_NUM[0],
+            NEIGHBORS_IP_RANGE_NUM[1],
+            BLOCKCHAIN_PORT_RANGE[0],
+            BLOCKCHAIN_PORT_RANGE[1]
+        )
+
+        logger.info({
+            "action": "set_neighbors",
+            "neighbors": self.neighbors
+        })
+
+    def sync_neighbors(self):
+        is_aquire = self.sync_neighbors_semaphore.acquire(blocking=False)
+
+        if is_aquire:
+            with contextlib.ExitStack() as stack:
+                stack.callback(self.sync_neighbors_semaphore.release)
+                self.set_neighbors()
+                loop = threading.Timer(BLOCKCHAIN_NEIGHBORS_SYNC_TIME_SEC, self.set_neighbors)
+
+                loop.start()
 
     def create_block(self, nonce, previous_hash):
 

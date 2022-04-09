@@ -98,4 +98,6 @@ if __name__ == "__main__":
     port = args.port
     
     app.config['port'] = port
+
+    get_blockchain().sync_neighbors()
     app.run(host="0.0.0.0", port=port, threaded=True, debug=True)
